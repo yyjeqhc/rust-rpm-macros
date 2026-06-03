@@ -2,6 +2,45 @@
 # Rust macros
 #
 
+# Default crates.io API endpoint for downloading .crate files
+%__crates_url https://static.crates.io/api/v1/crates/
+
+# Generate the Source URL for a crate from crates.io
+#
+# Usage:
+#   Source: %{crates_source}              # zero args: uses %crate and %crate_version
+#   Source: %{crates_source foo 1.2.3}    # explicit args
+#
+# Fallback chain for crate name:  %1 -> %crate -> %name
+# Fallback chain for version:     %2 -> %crate_version -> %version
+#
+# Requires %global crate and %global crate_version in the spec file
+# (or pass explicit arguments).
+#
+# The base URL can be overridden by redefining %__crates_url.
+%crates_source() %{lua:
+    local crate = rpm.expand('%1')
+    local version = rpm.expand('%2')
+    local url = rpm.expand('%__crates_url')
+    -- fallback: crate name
+    if crate == '%1' then
+        crate = rpm.expand('%crate')
+    end
+    if crate == '%crate' then
+        crate = rpm.expand('%name')
+    end
+    -- fallback: version
+    if version == '%2' then
+        version = rpm.expand('%crate_version')
+    end
+    if version == '%crate_version' then
+        version = rpm.expand('%version')
+    end
+    -- RPM uses ~ for pre-release separators; crates.io uses -
+    version = version:gsub('~', '-')
+    print(url .. crate .. '/' .. version .. '/download#/' .. crate .. '-' .. version .. '.tar.gz')
+}
+
 # Install a crate to system cargo registry
 %rust_install_crate \
   %__install -d %{buildroot}%{_datadir}/cargo/registry/%{crate_name}-%{version} \
