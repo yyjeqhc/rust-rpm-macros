@@ -128,6 +128,10 @@ while IFS="$(printf '\t')" read -r crate_name crate_version source; do
             print_err "Skipping local dependency: $crate_name $crate_version ($source)"
             continue
             ;;
+        git+*)
+            print_err "Skipping git dependency: $crate_name $crate_version ($source)"
+            continue
+            ;;
     esac
 
     dep_count=$((dep_count + 1))
