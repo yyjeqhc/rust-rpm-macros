@@ -24,22 +24,6 @@ if [[ ! -f "$SPEC_SELF" ]]; then
   exit 0
 fi
 
-# Make the main package provide the crate virtual dependency.
-#
-# This is equivalent to adding the following line to each Rust crate spec:
-#
-#   Provides: crate(%{crate_name})
-#
-# It allows automatically generated BuildRequires such as:
-#
-#   crate(foo)
-#
-# to be resolved by the corresponding main Rust crate package.
-cat >> "$SPECPART" <<'EOF'
-Provides: crate(%{crate_name})
-
-EOF
-
 if ! awk '
   /^[[:space:]]*%package[[:space:]]+/ {
     if (match($0, /-n[[:space:]]+%\{name\}\+([A-Za-z0-9_.-]+)/, m) && !seen[m[1]]++) {
