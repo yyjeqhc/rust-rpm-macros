@@ -22,10 +22,44 @@ directory = "/usr/share/cargo/registry"\
 EOF\
 }
 
-# Remove lock file then build crate in release mode
 %rust_build_release() %{expand:\
-  rm -rf Cargo.lock \
-  cargo build --release \
+  CARGO=${CARGO:-cargo} \
+  RUST_CARGO_FLAGS=${RUST_CARGO_FLAGS:-} \
+  RUST_BUILD_FLAGS=${RUST_BUILD_FLAGS:---release} \
+  RUST_LOCK_POLICY=${RUST_LOCK_POLICY:-locked} \
+  lock_flags="" \
+  case "$RUST_LOCK_POLICY" in \
+    auto) \
+      if [ -f Cargo.lock ]; then \
+        lock_flags="--locked"; \
+      fi \
+      ;; \
+    locked) \
+      if [ ! -f Cargo.lock ]; then \
+        echo "error: RUST_LOCK_POLICY=locked but Cargo.lock is missing" >&2; \
+        echo "hint: Rust application packages should usually ship Cargo.lock; use RUST_LOCK_POLICY=auto or ignore only as a transitional exception." >&2; \
+        exit 1; \
+      fi; \
+      lock_flags="--locked"; \
+      ;; \
+    frozen) \
+      if [ ! -f Cargo.lock ]; then \
+        echo "error: RUST_LOCK_POLICY=frozen but Cargo.lock is missing" >&2; \
+        exit 1; \
+      fi; \
+      lock_flags="--frozen"; \
+      ;; \
+    ignore) \
+      rm -f Cargo.lock; \
+      ;; \
+    unlocked) \
+      ;; \
+    *) \
+      echo "error: unknown RUST_LOCK_POLICY=$RUST_LOCK_POLICY" >&2; \
+      exit 1; \
+      ;; \
+  esac; \
+  $CARGO build $RUST_BUILD_FLAGS $lock_flags $RUST_CARGO_FLAGS \
 }
 
 # Directory for storing generated buildrequires
