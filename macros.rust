@@ -26,6 +26,7 @@ EOF\
   CARGO=${CARGO:-cargo} \
   RUST_CARGO_FLAGS=${RUST_CARGO_FLAGS:---offline} \
   RUST_BUILD_FLAGS=${RUST_BUILD_FLAGS:---release} \
+  RUST_BUILD_ARGS=${RUST_BUILD_ARGS:-} \
   RUST_LOCK_POLICY=${RUST_LOCK_POLICY:-refresh} \
   lock_flags="" \
   case "$RUST_LOCK_POLICY" in \
@@ -65,35 +66,17 @@ EOF\
       exit 1; \
       ;; \
   esac; \
-  $CARGO build $RUST_BUILD_FLAGS $lock_flags $RUST_CARGO_FLAGS \
+  $CARGO build $RUST_BUILD_FLAGS $lock_flags $RUST_CARGO_FLAGS $RUST_BUILD_ARGS \
 }
 
-# Directory for storing generated buildrequires
-%_cargo_buildrequires %{_builddir}/%{name}-%{version}-%{release}.%{_arch}-cargo-buildrequires
-
-# Dynamic BuildRequires generation from Cargo.lock
-# Usage in spec file:
-#   %generate_buildrequires
-#   %cargo_buildrequires
-#
-# This automatically parses Cargo.lock and generates all BuildRequires
-%cargo_buildrequires() %{expand:\
-echo 'rust-rpm-macros'
-echo 'rust'
-
-# Check if Cargo.lock exists
-if [ ! -f Cargo.lock ]; then
-  echo 'ERROR: Cargo.lock not found. This is not a valid Cargo project.' >&2
-  echo 'Hint: Run "cargo generate-lockfile" or "cargo update" to generate it.' >&2
-  exit 1
-fi
-
-# Generate BuildRequires using bash script
-mkdir -p "%{_cargo_buildrequires}"
-%{_rpmconfigdir}/rust-rpm-macros/cargo_buildrequires.sh --output %{_cargo_buildrequires}/buildrequires.txt >&2
-
-# Output the generated BuildRequires
-if [ -f %{_cargo_buildrequires}/buildrequires.txt ]; then
-  cat %{_cargo_buildrequires}/buildrequires.txt
-fi
+%rust_test %{expand:\
+  CARGO=${CARGO:-cargo} \
+  RUST_CARGO_FLAGS=${RUST_CARGO_FLAGS:---offline} \
+  RUST_TEST_FLAGS=${RUST_TEST_FLAGS:-} \
+  RUST_TEST_ARGS=${RUST_TEST_ARGS:-} \
+  if [ -n "$RUST_TEST_ARGS" ]; then \
+    $CARGO test $RUST_TEST_FLAGS $RUST_CARGO_FLAGS -- $RUST_TEST_ARGS; \
+  else \
+    $CARGO test $RUST_TEST_FLAGS $RUST_CARGO_FLAGS; \
+  fi \
 }
