@@ -8,4 +8,3 @@ install:
 	install -D -m644 macros.buildsystem.rust $(DESTDIR)$(RPMMACRODIR)/macros.buildsystem.rust
 	install -D -m644 macros.rust $(DESTDIR)$(RPMMACRODIR)/macros.rust
 	install -D -m755 rustcrates-gen-feature-specparts.sh $(DESTDIR)$(RPMSCRIPTDIR)/rustcrates-gen-feature-specparts.sh
-	install -D -m755 cargo_buildrequires.sh $(DESTDIR)$(RPMSCRIPTDIR)/cargo_buildrequires.sh
